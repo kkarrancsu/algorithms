@@ -27,4 +27,8 @@ def backtrack(construct_candidates: Callable, is_a_solution: Callable, max_soln_
                     return solution
         return None
 
-    return find_next(0)
+    final_solution = find_next(0)
+    # remove None from the solution, so that we can allow for shorter than max-solution-size
+    #  solutions
+    final_solution = [x for x in final_solution if x is not None]
+    return final_solution
