@@ -20,12 +20,12 @@ def goodness_max(cur_best, new_metric):
         return False
 
 
-def branch_and_bound(construct_candidates: Callable,
-                     is_a_solution: Callable,
-                     goodness_fn: Callable,
-                     max_soln_sz,
-                     max_solutions: int = 100,
-                     goodness_fn_comparator: Union[Callable, str] = goodness_min):
+def backtrack_bnb(construct_candidates: Callable,
+                  is_a_solution: Callable,
+                  goodness_fn: Callable,
+                  max_soln_sz,
+                  max_solutions: int = 100,
+                  goodness_fn_comparator: Union[Callable, str] = goodness_min):
     max_soln_sz = min(max_soln_sz, MAX_CANDIDATES)
     solution = [None] * max_soln_sz
 
@@ -47,6 +47,7 @@ def branch_and_bound(construct_candidates: Callable,
         nonlocal num_soln_found
 
         candidates = construct_candidates(solution_vector=solution, valid_idx=ii)
+        # print('candidates', candidates)
         for c in candidates:
             solution[ii] = c
             cur_soln_goodness = goodness_fn(solution_vector=solution, valid_idx=ii)

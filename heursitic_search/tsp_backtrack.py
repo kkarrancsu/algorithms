@@ -8,13 +8,16 @@ Solves a Traveling Salesman problem (TSP) using heursitic_search,
 where the graph is represented as an adjacency matrix.
 
 Note that b/c we are using backtracking to solve the TSP problem,
-it will *not* be optimal.  To find the optimal solution, refer to
-the tsp_branchandbound.py which uses branch & bound to solve the
+it will *not* be an optimal solution, just a solution which satisfies
+the constraints.  To find the optimal solution, refer to
+the tsp_bnb.py which uses backtracking with branch & bound to solve the
 TSP problem.
 """
 
 
 def solve_tsp_backtrack(tsp_problem):
+    soln_sz = len(tsp_problem) + 1  # make it a roundtrip
+
     # TODO: should we prune from the candidates constructed ones that would be invalid?
     #  the consequences of that are (as it seems to me):
     #   1 - is_a_tsp_solution() is effectively outdated.  we can simply return True every time
@@ -23,17 +26,13 @@ def solve_tsp_backtrack(tsp_problem):
     def construct_tsp_candidates(solution_vector=None, valid_idx=0):
         # a valid candidate is the next valid move we can take, from our current
         # location.
-        # in the representation of the tsp_problem, we see that any "weight"
-        # of the path > 0 is a path to the next city
-
         current_city = solution_vector[valid_idx]
-        if current_city is None:
-            current_city = 0  # start at city A
-        next_city_weights = tsp_problem[current_city, :]
-        # get the indices of all cities where the weight is not 0
+        if (valid_idx == 0 and current_city is None) or (valid_idx == soln_sz - 1):
+            return [0]  # start & end on the same city-A
+
         valid_next_cities = []
-        for ii, next_city_weight in enumerate(next_city_weights):
-            if next_city_weight > 0 and ii not in solution_vector[0:valid_idx+1]:
+        for ii in range(len(tsp_problem)):  # len(tsp_problem) gets us the # of cities
+            if ii not in solution_vector[0:valid_idx]:
                 valid_next_cities.append(ii)
 
         return valid_next_cities
@@ -43,23 +42,27 @@ def solve_tsp_backtrack(tsp_problem):
         # the same city twice.  Hence, in our solution vector, we simply
         # see if all the elements are unique.  If so, this means that it we
         # have not revisited and thus, we have a partial solution
-        solution_vector_valid = solution_vector[0:valid_idx + 1]
-        solution_set = set(solution_vector_valid)  # casting as a set removes redundant elements
-                                                   # easy to understand this code, but probably
-                                                   # inefficient
-        if len(solution_vector_valid) == len(solution_set):
-            return True
+        if valid_idx < soln_sz - 1:
+            solution_vector_valid = solution_vector[0:valid_idx + 1]
+            solution_set = set(solution_vector_valid)  # casting as a set removes redundant elements
+            # easy to understand this code, but probably
+            # inefficient
+
+            if len(solution_vector_valid) == len(solution_set):
+                return True
+            else:
+                return False
         else:
-            return False
+            # here, we only deem it a solution if the path is complete
+            # meaning that we started at 0 and ended at 0.
+            # we don't need to check the middle againk b/c that should have
+            # been taken care of with the if block above
+            if solution_vector[0] == 0 and solution_vector[-1] == 0:
+                return True
+            else:
+                return False
 
-    max_soln_sz = len(tsp_problem) - 1  # b/c we know the starting & ending point
-                                        # to be city-A, we only need to decide
-                                        # the path in between
-
-    a_soln = backtrack.backtrack(construct_tsp_candidates, is_a_tsp_solution, max_soln_sz)
-    # append start & end to the solution to be complete
-    a_soln.insert(0, 0)
-    a_soln.append(0)
+    a_soln = backtrack.backtrack(construct_tsp_candidates, is_a_tsp_solution, soln_sz)
     print(a_soln)
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import numpy as np
-import bnb
+import backtrack_bnb
 
 """
 Solves a Traveling Salesman problem (TSP) using heursitic_search,
@@ -15,20 +15,20 @@ TSP problem.
 
 
 def solve_tsp_bnb(tsp_problem):
+    soln_sz = len(tsp_problem) + 1  # needs to be a roundtrip
+    max_solutions = 100
+
     def construct_tsp_candidates(solution_vector=None, valid_idx=0):
         # a valid candidate is the next valid move we can take, from our current
         # location.
-        # in the representation of the tsp_problem, we see that any "weight"
-        # of the path > 0 is a path to the next city
 
         current_city = solution_vector[valid_idx]
-        if current_city is None:
-            current_city = 0  # start at city A
-        next_city_weights = tsp_problem[current_city, :]
-        # get the indices of all cities where the weight is not 0
+        if (valid_idx == 0 and current_city is None) or (valid_idx == soln_sz - 1):
+            return [0]  # start & end on the same city-A
+
         valid_next_cities = []
-        for ii, next_city_weight in enumerate(next_city_weights):
-            if (next_city_weight > 0) and (ii not in solution_vector[0:valid_idx+1]) and (ii != 0):
+        for ii in range(len(tsp_problem)):  # len(tsp_problem) gets us the # of cities
+            if ii not in solution_vector[0:valid_idx]:
                 valid_next_cities.append(ii)
 
         return valid_next_cities
@@ -38,14 +38,25 @@ def solve_tsp_bnb(tsp_problem):
         # the same city twice.  Hence, in our solution vector, we simply
         # see if all the elements are unique.  If so, this means that it we
         # have not revisited and thus, we have a partial solution
-        solution_vector_valid = solution_vector[0:valid_idx + 1]
-        solution_set = set(solution_vector_valid)  # casting as a set removes redundant elements
-                                                   # easy to understand this code, but probably
-                                                   # inefficient
-        if len(solution_vector_valid) == len(solution_set):
-            return True
+        if valid_idx < soln_sz - 1:
+            solution_vector_valid = solution_vector[0:valid_idx + 1]
+            solution_set = set(solution_vector_valid)  # casting as a set removes redundant elements
+                                                       # easy to understand this code, but probably
+                                                       # inefficient
+
+            if len(solution_vector_valid) == len(solution_set):
+                return True
+            else:
+                return False
         else:
-            return False
+            # here, we only deem it a solution if the path is complete
+            # meaning that we started at 0 and ended at 0.
+            # we don't need to check the middle againk b/c that should have
+            # been taken care of with the if block above
+            if solution_vector[0] == 0 and solution_vector[-1] == 0:
+                return True
+            else:
+                return False
 
     def tsp_goodness_fn(solution_vector=None, valid_idx=0):
         # from the TSP perspective, we'd like to minimize our total distance
@@ -59,14 +70,8 @@ def solve_tsp_bnb(tsp_problem):
 
         return total_weight
 
-    max_soln_sz = len(tsp_problem) - 1
-    max_solutions = 100
-
-    best_soln = bnb.branch_and_bound(construct_tsp_candidates, is_a_tsp_solution,
-                                     tsp_goodness_fn, max_soln_sz, max_solutions, 'min')
-    # append start & end to the solution to be complete
-    best_soln.insert(0, 0)
-    best_soln.append(0)
+    best_soln = backtrack_bnb.backtrack_bnb(construct_tsp_candidates, is_a_tsp_solution,
+                                            tsp_goodness_fn, soln_sz, max_solutions, 'min')
     print(best_soln)
 
 
