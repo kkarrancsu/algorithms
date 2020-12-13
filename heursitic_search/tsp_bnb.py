@@ -33,7 +33,7 @@ def solve_tsp_bnb(tsp_problem):
 
         return valid_next_cities
 
-    def is_a_tsp_solution(solution_vector=None, valid_idx=0):
+    def is_a_partial_tsp_solution(solution_vector=None, valid_idx=0):
         # in the context of TSP, a solution is one in which we don't visit
         # the same city twice.  Hence, in our solution vector, we simply
         # see if all the elements are unique.  If so, this means that it we
@@ -58,6 +58,19 @@ def solve_tsp_bnb(tsp_problem):
             else:
                 return False
 
+    def is_a_full_tsp_solution(solution_vector=None, valid_idx=0):
+        if valid_idx < soln_sz - 1:
+            return False
+        else:
+            # here, we only deem it a solution if the path is complete
+            # meaning that we started at 0 and ended at 0.
+            # we don't need to check the middle againk b/c that should have
+            # been taken care of with the if block above
+            if solution_vector[0] == 0 and solution_vector[-1] == 0:
+                return True
+            else:
+                return False
+
     def tsp_goodness_fn(solution_vector=None, valid_idx=0):
         # from the TSP perspective, we'd like to minimize our total distance
         # so, if our metric is to minimize the total weight of the graphs.
@@ -70,7 +83,8 @@ def solve_tsp_bnb(tsp_problem):
 
         return total_weight
 
-    best_soln = backtrack_bnb.backtrack_bnb(construct_tsp_candidates, is_a_tsp_solution,
+    best_soln = backtrack_bnb.backtrack_bnb(construct_tsp_candidates, is_a_partial_tsp_solution,
+                                            is_a_full_tsp_solution,
                                             tsp_goodness_fn, soln_sz, max_solutions, 'min')
     print(best_soln)
 
