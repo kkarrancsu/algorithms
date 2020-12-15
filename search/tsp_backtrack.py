@@ -1,27 +1,31 @@
 #!/usr/bin/env python
 
 import numpy as np
-import backtrack_bnb
+import backtrack
 
 """
-Solves a Traveling Salesman problem (TSP) using heursitic_search,
+Solves a Traveling Salesman problem (TSP) using search,
 where the graph is represented as an adjacency matrix.
 
 Note that b/c we are using backtracking to solve the TSP problem,
-it will *not* be optimal.  To find the optimal solution, refer to
-the tsp_branchandbound.py which uses branch & bound to solve the
+it will *not* be an optimal solution, just a solution which satisfies
+the constraints.  To find the optimal solution, refer to
+the tsp_bnb.py which uses backtracking with branch & bound to solve the
 TSP problem.
 """
 
 
-def solve_tsp_bnb(tsp_problem):
-    soln_sz = len(tsp_problem) + 1  # needs to be a roundtrip
-    max_solutions = 100
+def solve_tsp_backtrack(tsp_problem):
+    soln_sz = len(tsp_problem) + 1  # make it a roundtrip
 
+    # TODO: should we prune from the candidates constructed ones that would be invalid?
+    #  the consequences of that are (as it seems to me):
+    #   1 - is_a_tsp_solution() is effectively outdated.  we can simply return True every time
+    #   2 - this also means that the order in which candidate_solutions are returned will
+    #       matter
     def construct_tsp_candidates(solution_vector=None, valid_idx=0):
         # a valid candidate is the next valid move we can take, from our current
         # location.
-
         current_city = solution_vector[valid_idx]
         if (valid_idx == 0 and current_city is None) or (valid_idx == soln_sz - 1):
             return [0]  # start & end on the same city-A
@@ -33,7 +37,7 @@ def solve_tsp_bnb(tsp_problem):
 
         return valid_next_cities
 
-    def is_a_partial_tsp_solution(solution_vector=None, valid_idx=0):
+    def is_a_tsp_solution(solution_vector=None, valid_idx=0):
         # in the context of TSP, a solution is one in which we don't visit
         # the same city twice.  Hence, in our solution vector, we simply
         # see if all the elements are unique.  If so, this means that it we
@@ -41,8 +45,8 @@ def solve_tsp_bnb(tsp_problem):
         if valid_idx < soln_sz - 1:
             solution_vector_valid = solution_vector[0:valid_idx + 1]
             solution_set = set(solution_vector_valid)  # casting as a set removes redundant elements
-                                                       # easy to understand this code, but probably
-                                                       # inefficient
+            # easy to understand this code, but probably
+            # inefficient
 
             if len(solution_vector_valid) == len(solution_set):
                 return True
@@ -58,35 +62,8 @@ def solve_tsp_bnb(tsp_problem):
             else:
                 return False
 
-    def is_a_full_tsp_solution(solution_vector=None, valid_idx=0):
-        if valid_idx < soln_sz - 1:
-            return False
-        else:
-            # here, we only deem it a solution if the path is complete
-            # meaning that we started at 0 and ended at 0.
-            # we don't need to check the middle againk b/c that should have
-            # been taken care of with the if block above
-            if solution_vector[0] == 0 and solution_vector[-1] == 0:
-                return True
-            else:
-                return False
-
-    def tsp_goodness_fn(solution_vector=None, valid_idx=0):
-        # from the TSP perspective, we'd like to minimize our total distance
-        # so, if our metric is to minimize the total weight of the graphs.
-        # the goodness metric is the total weight of the path
-        total_weight = 0
-        for ii in range(1, valid_idx+1):
-            from_node = solution_vector[ii-1]
-            to_node = solution_vector[ii]
-            total_weight += tsp_problem[from_node][to_node]
-
-        return total_weight
-
-    best_soln = backtrack_bnb.backtrack_bnb(construct_tsp_candidates, is_a_partial_tsp_solution,
-                                            is_a_full_tsp_solution,
-                                            tsp_goodness_fn, soln_sz, max_solutions, 'min')
-    print(best_soln)
+    a_soln = backtrack.backtrack(construct_tsp_candidates, is_a_tsp_solution, soln_sz)
+    print(a_soln)
 
 
 def setup_sample_tsp_problem():
@@ -139,4 +116,4 @@ def setup_sample_tsp_problem():
 if __name__ == '__main__':
     # define a sample graph that needs to be traversed
     tsp_problem = setup_sample_tsp_problem()
-    solve_tsp_bnb(tsp_problem)
+    solve_tsp_backtrack(tsp_problem)
